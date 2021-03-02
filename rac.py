@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
-import urllib2
+try:
+    from urllib.error import URLError
+    from urllib.request import Request, urlopen
+except ImportError:
+    from urllib2 import Request, URLError, urlopen
+
 import ssl
 
 class RAC(object):
@@ -37,19 +42,19 @@ class RAC(object):
         return self._extract_value(data, 'CMDOUTPUT')
 
     def _make_request(self, uri, data=None):
-        req = urllib2.Request('https://%s/cgi-bin/%s' % (self.host, uri), data=self._inject_header(data))
+        req = Request('https://%s/cgi-bin/%s' % (self.host, uri), data=self._inject_header(data))
         if self.sid:
             req.add_header('Cookie', 'sid=%s' % self.sid)
         if self.certfile is None:
             try:
-                return urllib2.urlopen(req).read()
-            except urllib2.URLError:
+                return urlopen(req).read()
+            except URLError:
                 ctx = ssl.create_default_context()
                 ctx.check_hostname = False
                 ctx.verify_mode = ssl.CERT_NONE
-                return urllib2.urlopen(req, context=ctx).read()
+                return urlopen(req, context=ctx).read()
         else:
-            return urllib2.urlopen(req, cafile=self.certfile).read()
+            return urlopen(req, cafile=self.certfile).read()
 
     def _login(self):
         data = '<LOGIN><REQ><USERNAME>%s</USERNAME><PASSWORD>%s</PASSWORD></REQ></LOGIN>' % (self.username, self.password)
